@@ -1,771 +1,476 @@
-# 📚 Complete Learning Guide: Camera Gesture Authentication System
+# Learning Guide: Camera Gesture Authentication System
 
-## ⏱️ Time Estimates (Quick Answer)
+## Prerequisites
 
-**If you know NOTHING about programming:**
-- **Basic understanding:** 1-2 days (reading + experimenting)
-- **Full understanding:** 1-2 weeks (with practice)
+- Python 3.11 or higher
+- Webcam/camera
+- Windows/macOS/Linux
 
-**If you know Python basics:**
-- **Basic understanding:** 2-4 hours
-- **Full understanding:** 1-2 days
+## Installation
 
-**If you know Python + some libraries:**
-- **Basic understanding:** 30 minutes - 1 hour
-- **Full understanding:** 3-6 hours
+1. Clone the repository:
+```bash
+git clone https://github.com/VikramAditya33/Camera-Authentication.git
+cd Camera-Authentication
+```
 
-**If you're experienced:**
-- Just read the code - you'll get it in 15-30 minutes! 😎
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
----
-
-## 🎯 Welcome! Let's Start from Scratch
-
-Hey! 👋 If you're reading this, you probably want to understand this project but don't know where to start. Don't worry! This guide will take you from zero to understanding everything.
-
----
-
-## 📖 Part 1: What is This Project?
-
-### Simple Explanation (Like You're 5 Years Old)
-
-Imagine you want to unlock your phone, but instead of typing a password, you make a special hand gesture in front of the camera. Your phone recognizes YOUR specific gesture and lets you in!
-
-That's exactly what this project does - it's a security system that uses **hand gestures** instead of passwords.
-
-### Real-World Example
-
-Think of it like:
-- **Password login:** You type "password123" 
-- **This system:** You show a peace sign ✌️ with your hand
-
-The camera sees your gesture, recognizes it's YOU, and logs you in!
+3. Run the application:
+```bash
+python gesture_login_gui.py
+```
 
 ---
 
-## 🛠️ Part 2: Technologies Used (Explained Simply)
+## What This Project Does
 
-### 1. **Python** 🐍
-**What it is:** A programming language (like speaking English, but to computers)
+A login system that uses hand gestures instead of passwords. You register with a gesture, then use that same gesture to login.
 
-**Why we use it:** 
-- Easy to learn and read
-- Has amazing libraries for camera/computers
-- Perfect for beginners
-
-**Time to learn basics:** 1-2 weeks (but you can understand this project in just a few hours!)
+**Registration:** Show your gesture for 8 seconds → system saves it  
+**Login:** Show the same gesture → system recognizes you → logged in
 
 ---
 
-### 2. **OpenCV (cv2)** 📷
-**What it is:** A library that helps computers "see" through cameras
+## Technologies Used
 
-**What it does in our project:**
-- Opens your webcam
-- Captures video frames (like taking photos very fast)
-- Shows the camera feed on screen
-- Draws lines and text on the video
+### Python
+Programming language. The code is written in Python.
 
-**Real Example:**
+### OpenCV (cv2)
+Handles camera input and video display.
+
 ```python
 cap = cv2.VideoCapture(0)  # Opens camera
-ret, frame = cap.read()      # Takes a photo
-cv2.imshow("Video", frame)   # Shows it on screen
+ret, frame = cap.read()      # Gets frame
+cv2.imshow("Video", frame)   # Shows frame
 ```
 
-**Think of it as:** The "eyes" of our program
+### MediaPipe
+Detects hands and extracts 21 landmark points per hand.
 
----
-
-### 3. **MediaPipe** 🤖
-**What it is:** Google's AI library that can detect hands, faces, and body parts
-
-**What it does in our project:**
-- Looks at camera frames
-- Finds your hands
-- Identifies 21 specific points on each hand (like fingertips, joints)
-- Tracks hand movements
-
-**The Magic:**
-- MediaPipe uses machine learning (AI) to recognize hands
-- It doesn't need YOU to teach it - it's already trained!
-- It can detect hands even in different lighting conditions
-
-**Real Example:**
 ```python
 hands = mp.solutions.hands.Hands()
-result = hands.process(frame)  # Finds hands in the video frame
+result = hands.process(frame)  # Detects hands
 ```
 
-**Think of it as:** The "brain" that recognizes hands
+**Configuration used:**
+- `max_num_hands=1` or `2` (one-hand or two-hand mode)
+- `min_detection_confidence=0.7` (70% confidence required)
+- `min_tracking_confidence=0.7` (70% tracking confidence)
 
----
+### NumPy
+Stores hand data as arrays and calculates distances.
 
-### 4. **NumPy** 🔢
-**What it is:** A library for doing math calculations with numbers
-
-**What it does in our project:**
-- Stores hand position data (21 points × 3 coordinates = 63 numbers per hand!)
-- Calculates distances between points
-- Compares gestures mathematically
-- Finds similarities between gestures
-
-**Real Example:**
 ```python
-features = np.array([1.2, 3.4, 5.6, ...])  # Stores hand data as numbers
-distance = np.linalg.norm(features1 - features2)  # Calculates difference
+features = np.array([0.5, 0.3, 0.2, ...])
+distance = np.linalg.norm(features1 - features2)
 ```
 
-**Think of it as:** The "calculator" that does math on hand data
+### Tkinter
+Creates the GUI (windows, buttons, text fields).
 
----
-
-### 5. **Tkinter** 🖥️
-**What it is:** Python's built-in library for creating windows and buttons
-
-**What it does in our project:**
-- Creates the login window you see
-- Makes buttons (like "Login Through Camera")
-- Shows text boxes and labels
-- Handles clicks and user input
-
-**Real Example:**
 ```python
-button = tk.Button(window, text="Click Me", command=do_something)
-button.pack()  # Shows the button on screen
+button = tk.Button(window, text="Login", command=login)
+button.pack()
 ```
 
-**Think of it as:** The "graphical interface" - what users see and click
+### JSON
+Stores user data in `users_db.json` file.
+
+**Note:** JSON file is created automatically when first user registers. Contains username, gesture features, and registration timestamp.
+
+### Threading
+Used in GUI to prevent freezing when camera operations run. Background thread handles camera while UI stays responsive.
+
+```python
+thread = threading.Thread(target=authenticate, daemon=True)
+thread.start()  # Runs in background
+```
 
 ---
 
-### 6. **JSON** 💾
-**What it is:** A way to store data in a text file
+## How It Works
 
-**What it does in our project:**
-- Saves user gestures to a file
-- Stores usernames and their gesture data
-- Loads saved data when program starts
+### Registration Flow
 
-**Real Example:**
+1. User enters username
+2. User chooses one-hand or two-hand gesture
+3. Camera opens, user shows gesture for 8 seconds
+4. System captures ~240 frames (30 fps × 8 seconds)
+5. For each frame:
+   - MediaPipe detects hand → finds 21 points
+   - Extracts features (coordinates, angles, distances)
+   - Stores feature array
+6. Average all frames → create one signature
+7. Save to `users_db.json`
+
+### Login Flow
+
+1. User enters username
+2. User clicks "Login Through Camera"
+3. Camera opens, user shows gesture
+4. System continuously:
+   - Captures frame
+   - MediaPipe detects hand → extracts features
+   - Loads stored signature from JSON
+   - Calculates similarity percentage
+   - If similarity ≥ 75% for 15 consecutive frames → success
+5. Show dashboard
+
+---
+
+## Project Structure
+
+```
+Camera-Authentication/
+├── gesture_login_gui.py    # GUI (what user sees)
+├── gesture_auth.py        # Core logic (how it works)
+├── users_db.json          # User database
+└── requirements.txt       # Dependencies
+```
+
+---
+
+## Code Overview
+
+### gesture_auth.py
+
+**GestureAuthenticator class** - Handles all authentication logic.
+
+**Key functions:**
+
+- `init_camera()` - Opens webcam
+- `extract_hand_features()` - Converts hand landmarks to numbers (21 points × 3 coordinates + angles + distances)
+- `extract_two_hands_features()` - Same but for two hands
+- `record_gesture()` - Records gesture for 8 seconds, averages frames
+- `calculate_gesture_similarity()` - Compares two gestures, returns 0-100% match
+- `register_user()` - Records gesture and saves to JSON
+- `verify_gesture_live()` - Real-time verification during login
+
+### gesture_login_gui.py
+
+**GestureLoginApp class** - Handles user interface.
+
+**Key functions:**
+
+- `show_login_screen()` - Creates login UI
+- `show_register_screen()` - Creates registration UI
+- `login_with_gesture()` - Handles login button click
+- `show_dashboard()` - Success screen after login
+
+---
+
+## Key Concepts
+
+### Hand Landmarks (21 Points)
+
+MediaPipe detects 21 points on each hand:
+- Wrist (point 0)
+- Each finger: 4 points (base, middle joint, top joint, tip)
+- Total: 1 wrist + 5 fingers × 4 = 21 points
+
+Each point has x, y, z coordinates (normalized 0-1).
+
+### Feature Extraction
+
+Converts hand shape to numbers:
+- 21 points × 3 coordinates = 63 numbers
+- 5 finger angles = 5 numbers
+- 5 distances from palm = 5 numbers
+- Total: ~73 numbers per hand
+
+**How it works:**
+1. Takes 21 landmark points from MediaPipe
+2. Extracts x, y, z coordinates for each point
+3. Calculates angles for finger tips (using arctan2)
+4. Calculates distances from palm center to each fingertip
+5. Combines all into one feature array
+
+**For two hands:**
+- Same process for both hands
+- Adds distance between hands
+- Adds angle between hands
+- Total: ~146 numbers for two hands
+
+### Similarity Calculation
+
+```python
+# Current gesture vs stored gesture
+distance = np.linalg.norm(features1 - features2)
+similarity = 100 * (1 - distance / max_distance)
+```
+
+Smaller distance = more similar. Returns 0-100% match.
+
+### Why These Numbers?
+
+- **8 seconds recording:** Enough time to average out small movements
+- **75% threshold:** Balance between security and usability
+- **15 consecutive frames:** Prevents accidental matches (0.5 seconds)
+- **21 points:** Enough to represent any hand shape accurately
+
+---
+
+## Common Questions
+
+**Q: Can two people have the same gesture?**  
+A: Very unlikely. Hand size, finger length, and exact positions are unique.
+
+**Q: Why average frames?**  
+A: Hand moves slightly even when trying to stay still. Averaging smooths this out.
+
+**Q: Is it secure?**  
+A: More secure than passwords, less secure than fingerprint. Good for medium security.
+
+**Q: Why 21 points?**  
+A: MediaPipe's model uses 21 points. It's sufficient for accuracy.
+
+---
+
+## Learning Path
+
+### If you're new to Python:
+
+1. Learn Python basics (variables, functions, classes, lists, dictionaries)
+2. Learn about file operations (reading/writing JSON)
+3. Install libraries: `pip install opencv-python mediapipe numpy pillow`
+4. Try OpenCV basics (open camera, display frames)
+5. Try MediaPipe basics (detect hands, draw landmarks)
+6. Read through this project's code
+
+### If you know Python:
+
+1. Read `gesture_auth.py` line by line
+2. Understand each function
+3. Read `gesture_login_gui.py`
+4. Run the code and trace execution
+5. Modify values (threshold, duration) and see what happens
+
+---
+
+## Code Examples
+
+### Recording a Gesture
+
+```python
+def record_gesture(self, duration=8):
+    cap = self.init_camera()
+    recorded_features = []
+    hands = mp.solutions.hands.Hands()
+    
+    start_time = datetime.now()
+    
+    while (datetime.now() - start_time).seconds < duration:
+        ret, frame = cap.read()
+        result = hands.process(frame)
+        
+        if result.multi_hand_landmarks:
+            features = self.extract_hand_features(result.multi_hand_landmarks[0])
+            recorded_features.append(features)
+        
+        cv2.imshow("Record Gesture", frame)
+    
+    return np.mean(recorded_features, axis=0)  # Average all frames
+```
+
+### Comparing Gestures
+
+```python
+def calculate_gesture_similarity(self, features1, features2):
+    f1 = np.array(features1)
+    f2 = np.array(features2)
+    distance = np.linalg.norm(f1 - f2)
+    max_distance = 5.0
+    similarity = 100 * (1 - distance / max_distance)
+    return max(0, similarity)
+```
+
+---
+
+## File Structure Details
+
+### gesture_auth.py
+
+- `__init__` - Sets up MediaPipe, loads users
+- `load_users()` - Reads from users_db.json
+- `save_users()` - Writes to users_db.json
+- `init_camera()` - Opens camera (640×480, 30fps)
+- `extract_hand_features()` - Converts landmarks to feature array
+- `extract_two_hands_features()` - Combines two hand features
+- `calculate_gesture_similarity()` - Returns match percentage
+- `record_gesture()` - Records for 8 seconds, averages frames
+- `register_user()` - Records and saves gesture
+- `verify_gesture_live()` - Real-time verification loop
+
+### gesture_login_gui.py
+
+- `__init__` - Creates window, sets up styles
+- `show_login_screen()` - Login UI
+- `show_register_screen()` - Registration UI
+- `login_with_gesture()` - Handles login in background thread
+- `show_dashboard()` - Success screen
+
+---
+
+## Data Flow
+
+**Registration:**
+```
+Show gesture → Camera captures frames → MediaPipe detects hand → 
+Extract features → Average frames → Save to JSON
+```
+
+**Login:**
+```
+Show gesture → Camera captures frames → MediaPipe detects hand → 
+Extract features → Load from JSON → Compare → If match ≥ 75% for 15 frames → Success
+```
+
+---
+
+## Data Storage Format
+
+The `users_db.json` file stores data like this:
+
 ```json
 {
-  "John": {
-    "gesture": [0.5, 0.3, 0.2, ...],
-    "two_hands": true
+  "username": {
+    "gesture": [0.5, 0.3, 0.2, 0.4, ...],
+    "two_hands": true,
+    "created_at": "2025-10-29T10:30:00"
   }
 }
 ```
 
-**Think of it as:** The "notebook" where we write down who registered what gesture
+- `gesture`: Array of numbers representing hand shape (~73 numbers for one hand, ~146 for two hands)
+- `two_hands`: Boolean indicating if user registered with two hands
+- `created_at`: ISO timestamp of registration
 
 ---
 
-## 🧠 Part 3: How Does It Work? (Step by Step)
+## Troubleshooting
 
-### 🔄 The Complete Flow
+### Camera not opening
+- Check if camera is being used by another application
+- Verify camera permissions in system settings
+- Try changing camera index: `cv2.VideoCapture(1)` instead of `0`
 
-#### **Registration Process:**
+### Low match percentage
+- Ensure good lighting
+- Keep hand steady during recording and login
+- Show gesture exactly as during registration
+- Try registering again with better lighting
 
-1. **User Opens App** → Sees login screen
-2. **User Clicks "Register"** → Goes to registration page
-3. **User Enters Username** → Types name (e.g., "Alice")
-4. **User Chooses Gesture Type** → One hand or two hands?
-5. **User Clicks "Register with Gesture"** → Camera opens
-6. **User Shows Gesture** → Holds hand(s) in front of camera for 8 seconds
-7. **System Records:**
-   - Camera captures 30 frames per second
-   - Each frame: MediaPipe detects hand → extracts 21 points → converts to numbers
-   - After 8 seconds: System averages all the frames → creates ONE signature
-8. **System Saves** → Stores the signature in `users_db.json` file
-9. **Done!** → User can now login
+### Hand not detected
+- Check lighting conditions
+- Make sure hand is fully visible in frame
+- Move closer to camera
+- Clean camera lens
 
-#### **Login Process:**
+### Registration fails
+- Hold gesture steady for full 8 seconds
+- Ensure hand is clearly visible
+- Try with different gesture (more distinct)
 
-1. **User Opens App** → Sees login screen
-2. **User Enters Username** → Types "Alice"
-3. **User Clicks "Login Through Camera"** → Camera opens
-4. **User Shows Gesture** → Holds the SAME gesture
-5. **System Checks:**
-   - Camera captures frames continuously
-   - MediaPipe detects hand → extracts features
-   - Compares with stored signature (from registration)
-   - Calculates similarity percentage (0-100%)
-   - If similarity ≥ 75% for 15 consecutive frames → SUCCESS!
-6. **System Authenticates** → Shows "Welcome!" screen
-7. **Done!** → User is logged in
+### GUI freezes during camera operations
+- This shouldn't happen as threading is used, but if it does, check if daemon thread is properly set
 
 ---
 
-## 📁 Part 4: Understanding the Code Structure
+## Tips for Good Gestures
 
-### Project Files Overview
+**One-hand gestures:**
+- Peace sign (✌️)
+- Thumbs up (👍)
+- OK sign (👌)
+- Rock sign (🤘)
+- Number signs (1-5 fingers)
 
-```
-Camera-Authentication/
-├── gesture_login_gui.py    ← The window/interface (what users see)
-├── gesture_auth.py        ← The brain/logic (how it works)
-├── users_db.json          ← The database (stores user data)
-└── requirements.txt       ← List of libraries needed
-```
+**Two-hand gestures (more secure):**
+- Peace signs on both hands
+- Mirror gestures (same on both hands)
+- Asymmetric gestures (different on each hand)
+- Heart shape with both hands
 
----
-
-### 📄 File 1: `gesture_auth.py` (The Brain)
-
-This file contains the `GestureAuthenticator` class - the core logic.
-
-#### **What Each Function Does:**
-
-**1. `__init__` (Line 9-15)**
-- Runs when the class is created
-- Sets up MediaPipe for hand detection
-- Loads existing users from database
-
-**2. `load_users()` (Line 17-22)**
-- Opens `users_db.json` file
-- Reads all registered users
-- If file doesn't exist, starts with empty list
-
-**3. `save_users()` (Line 24-26)**
-- Saves current users to `users_db.json` file
-- Updates the database
-
-**4. `init_camera()` (Line 28-37)**
-- Opens webcam (camera index 0)
-- Sets video resolution to 640×480
-- Sets frame rate to 30 FPS
-- Returns camera object
-
-**5. `extract_hand_features()` (Line 45-63)**
-- **Input:** Hand landmarks (21 points) from MediaPipe
-- **What it does:**
-  - Extracts x, y, z coordinates of all 21 points
-  - Calculates finger angles
-  - Calculates distances from palm center
-- **Output:** Array of numbers representing the hand shape
-
-**6. `extract_two_hands_features()` (Line 65-83)**
-- Same as above, but for TWO hands
-- Combines features from both hands
-- Also calculates distance and angle between hands
-
-**7. `calculate_gesture_similarity()` (Line 85-92)**
-- **Input:** Two feature arrays (current gesture vs stored gesture)
-- **What it does:**
-  - Calculates Euclidean distance (how different they are)
-  - Converts to similarity percentage (0-100%)
-- **Output:** Percentage match (e.g., 87.5%)
-
-**8. `record_gesture()` (Line 94-147)**
-- Records gesture for 8 seconds
-- Captures frames continuously
-- Extracts features from each frame
-- Averages all frames to create final signature
-- Shows real-time feedback on screen
-
-**9. `register_user()` (Line 149-161)**
-- Calls `record_gesture()` to capture gesture
-- Saves username and gesture data
-- Returns success/failure
-
-**10. `verify_gesture_live()` (Line 177-250)**
-- **The Login Function!**
-- Continuously checks camera
-- Compares current gesture with stored gesture
-- Requires 15 consecutive matching frames (stability check)
-- Returns success when authenticated
+**What makes a good gesture:**
+- Distinct finger configuration
+- Easy to reproduce consistently
+- Comfortable to hold for 8 seconds
+- Not easily guessable
 
 ---
 
-### 📄 File 2: `gesture_login_gui.py` (The Interface)
+## Understanding the Code Flow
 
-This file contains the `GestureLoginApp` class - the user interface.
+### When you click "Register with Gesture":
 
-#### **What Each Function Does:**
+1. GUI calls `register_user()` from `gesture_auth.py`
+2. `register_user()` calls `record_gesture()`
+3. `record_gesture()` opens camera loop:
+   - Captures frame
+   - MediaPipe detects hand
+   - Extracts features
+   - Stores in array
+   - Repeats for 8 seconds
+4. Averages all feature arrays
+5. Saves to JSON via `save_users()`
 
-**1. `__init__` (Line 9-20)**
-- Creates the main window
-- Sets window size (800×600)
-- Sets dark theme colors
-- Creates `GestureAuthenticator` instance
-- Shows login screen
+### When you click "Login Through Camera":
 
-**2. `setup_styles()` (Line 22-29)**
-- Configures button styles
-- Sets colors and fonts
-- Makes buttons look pretty!
-
-**3. `clear_screen()` (Line 31-33)**
-- Removes all widgets from window
-- Prepares for new screen
-
-**4. `show_login_screen()` (Line 35-106)**
-- Creates login page UI:
-  - Title "Gesture Authentication"
-  - Username input box
-  - "Login Through Camera" button
-  - "Register" button
-- Handles user interactions
-
-**5. `login_with_gesture()` (Line 108-133)**
-- Runs when user clicks "Login Through Camera"
-- Gets username from input box
-- Starts camera in background thread (so UI doesn't freeze)
-- Calls `verify_gesture_live()` from `gesture_auth.py`
-- Shows success/failure message
-
-**6. `show_register_screen()` (Line 135-287)**
-- Creates registration page UI:
-  - Username input
-  - Radio buttons (One Hand / Two Hands)
-  - "Register with Gesture" button
-- Handles registration
-
-**7. `show_dashboard()` (Line 289-331)**
-- Shows success screen after login
-- Displays welcome message
-- Shows logout button
-
-**8. `main()` (Line 333-336)**
-- Starts the program
-- Creates window
-- Runs the app
+1. GUI calls `login_with_gesture()` in background thread
+2. Calls `verify_gesture_live()` from `gesture_auth.py`
+3. `verify_gesture_live()` opens camera loop:
+   - Captures frame
+   - MediaPipe detects hand
+   - Extracts features
+   - Loads stored gesture from JSON
+   - Calculates similarity
+   - If ≥ 75% for 15 frames → success
+4. Updates GUI with result
 
 ---
 
-## 🎓 Part 5: Learning Path for Beginners
+## Modifying the Code
 
-### Week 1: Basics (2-3 hours/day)
+### Change similarity threshold:
 
-#### Day 1-2: Python Basics
-- Variables and data types
-- Functions and classes
-- Lists and dictionaries
-- File operations (reading/writing)
-
-**Resources:**
-- Python.org tutorial
-- W3Schools Python
-- Practice: Write simple programs
-
-#### Day 3-4: Tkinter Basics
-- Creating windows
-- Buttons and labels
-- Entry widgets
-- Layout managers (pack, grid)
-
-**Practice:** Build a simple calculator
-
-#### Day 5-6: OpenCV Basics
-- Opening camera
-- Capturing frames
-- Displaying video
-- Drawing on frames
-
-**Practice:** Build a simple webcam viewer
-
-#### Day 7: MediaPipe Basics
-- Installing MediaPipe
-- Hand detection example
-- Understanding landmarks
-- Drawing hand landmarks
-
-**Practice:** Build a hand tracker
-
----
-
-### Week 2: Understanding This Project (2-3 hours/day)
-
-#### Day 1-2: Read the Code
-- Read `gesture_auth.py` line by line
-- Understand each function
-- Test functions individually
-- Add print statements to see what's happening
-
-#### Day 3-4: Read GUI Code
-- Read `gesture_login_gui.py`
-- Understand UI flow
-- Modify colors/text
-- Add new buttons
-
-#### Day 5-6: Put It Together
-- Run the complete application
-- Register a user
-- Login with gesture
-- Trace through code execution
-
-#### Day 7: Experiment
-- Change similarity threshold
-- Modify recording duration
-- Add new features
-- Break things and fix them!
-
----
-
-## 🔍 Part 6: Code Walkthrough (Detailed)
-
-### Example: How Login Works
-
+In `gesture_auth.py`, line 177 or 163:
 ```python
-# Step 1: User clicks "Login Through Camera" button
-def login_with_gesture(self):
-    username = self.username_entry.get().strip()  # Gets username from input
-    
-    # Step 2: Start authentication in background thread
-    def authenticate():
-        self.auth.init_camera()  # Opens camera
-        
-        # Step 3: Verify gesture
-        success, message = self.auth.verify_gesture_live(username)
-        
-        # Step 4: Update UI based on result
-        if success:
-            self.show_dashboard(username)  # Success!
-        else:
-            messagebox.showerror("Failed", message)  # Failed
-    
-    thread = threading.Thread(target=authenticate, daemon=True)
-    thread.start()  # Runs in background so UI doesn't freeze
+def verify_gesture_live(self, username, threshold=75):  # Change 75 to your value
 ```
 
-### Example: How Gesture Recording Works
+### Change recording duration:
 
+In `gesture_auth.py`, line 152:
 ```python
-def record_gesture(self, duration=8):
-    cap = self.init_camera()  # Open camera
-    recorded_features = []
-    
-    hands = mp.solutions.hands.Hands()  # Create hand detector
-    
-    start_time = datetime.now()
-    
-    # Loop for 8 seconds
-    while (datetime.now() - start_time).seconds < duration:
-        ret, frame = cap.read()  # Capture frame
-        
-        # Detect hands
-        result = hands.process(frame)
-        
-        if result.multi_hand_landmarks:
-            # Extract features from hand
-            features = self.extract_hand_features(result.multi_hand_landmarks[0])
-            recorded_features.append(features)  # Save features
-        
-        # Show frame on screen
-        cv2.imshow("Record Gesture", frame)
-    
-    # Average all features to create signature
-    return np.mean(recorded_features, axis=0)
+gesture_features = self.record_gesture(duration=8, use_two_hands=use_two_hands)  # Change 8 to your value
 ```
 
-### Example: How Comparison Works
+### Change required stable frames:
 
+In `gesture_auth.py`, line 196:
 ```python
-def calculate_gesture_similarity(self, features1, features2):
-    # Convert to arrays
-    f1 = np.array(features1)  # Current gesture
-    f2 = np.array(features2)   # Stored gesture
-    
-    # Calculate distance (difference)
-    distance = np.linalg.norm(f1 - f2)
-    
-    # Convert to percentage (0-100%)
-    max_distance = 5.0
-    similarity = 100 * (1 - distance / max_distance)
-    
-    return max(0, similarity)  # Returns 0-100%
+required_stable_frames = 15  # Change 15 to your value
 ```
 
----
+### Change UI colors:
 
-## 📊 Part 7: Understanding Data Flow
-
-### What Happens During Registration?
-
-```
-1. User shows gesture
-   ↓
-2. Camera captures frame (30 times per second)
-   ↓
-3. MediaPipe detects hand → Finds 21 points
-   ↓
-4. Extract features → Convert to numbers [0.5, 0.3, 0.2, ...]
-   ↓
-5. Repeat for 8 seconds (240 frames)
-   ↓
-6. Average all frames → Create ONE signature
-   ↓
-7. Save to JSON file:
-   {
-     "Alice": {
-       "gesture": [0.5, 0.3, 0.2, ...],
-       "two_hands": false
-     }
-   }
-```
-
-### What Happens During Login?
-
-```
-1. User shows gesture
-   ↓
-2. Camera captures frame
-   ↓
-3. MediaPipe detects hand → Finds 21 points
-   ↓
-4. Extract features → [0.52, 0.31, 0.19, ...]
-   ↓
-5. Load stored signature from JSON → [0.5, 0.3, 0.2, ...]
-   ↓
-6. Calculate similarity → 87.5% match!
-   ↓
-7. If match ≥ 75% for 15 frames → SUCCESS!
-   ↓
-8. Show dashboard
-```
-
----
-
-## 🎯 Part 8: Key Concepts Explained
-
-### 1. Hand Landmarks (21 Points)
-
-MediaPipe detects 21 specific points on your hand:
-
-```
-       8   12  16  20
-        |   |   |   |
-        |   |   |   |
-        7   11  15  19
-     \  |   |   |   |  /
-      \ |   |   |   | /
-       \|   |   |   |/
-        6   10  14  18
-        |   |   |   |
-        |   |   |   |
-        5   9   13  17
-        |   |   |   |
-        |   |   |   |
-        4   8   12  16  20
-        |   |   |   |   |
-        |   |   |   |   |
-        3   7   11  15  19
-        |   |   |   |   |
-        |   |   |   |   |
-        2   6   10  14  18
-        |   |   |   |   |
-        |   |   |   |   |
-        1   5   9   13  17
-        |   |   |   |   |
-        |   |   |   |   |
-        0   4   8   12  16  20
-```
-
-Each point has:
-- **x coordinate** (horizontal position, 0-1)
-- **y coordinate** (vertical position, 0-1)
-- **z coordinate** (depth, how far from camera)
-
-### 2. Feature Extraction
-
-We convert hand shape into numbers:
-
+In `gesture_login_gui.py`, modify colors like:
 ```python
-# Example: Peace sign gesture
-features = [
-    0.5, 0.3, 0.2,  # Point 0 (wrist) x, y, z
-    0.6, 0.2, 0.1,  # Point 1 (thumb base) x, y, z
-    0.7, 0.1, 0.0,  # Point 2 (thumb joint) x, y, z
-    ...
-    # ... all 21 points × 3 coordinates = 63 numbers
-    # Plus finger angles (5 numbers)
-    # Plus distances from palm (5 numbers)
-    # Total: ~73 numbers per hand!
-]
-```
-
-### 3. Euclidean Distance
-
-How we measure difference between gestures:
-
-```python
-# Gesture 1: [0.5, 0.3, 0.2, ...]
-# Gesture 2: [0.52, 0.31, 0.19, ...]
-
-# Calculate distance
-distance = sqrt((0.5-0.52)² + (0.3-0.31)² + (0.2-0.19)² + ...)
-
-# Smaller distance = more similar
-# Larger distance = more different
-```
-
-### 4. Similarity Percentage
-
-```python
-# If distance = 0.5 (out of max 5.0)
-similarity = 100 × (1 - 0.5/5.0)
-similarity = 100 × (1 - 0.1)
-similarity = 100 × 0.9
-similarity = 90%  # Very similar!
+bg="#1e1e2e"  # Background color
+fg="#cdd6f4"  # Text color
 ```
 
 ---
 
-## 🛠️ Part 9: Common Questions & Answers
+## Next Steps
 
-### Q1: Why 21 points per hand?
-**A:** MediaPipe's AI model was trained to detect these 21 points. They're enough to represent any hand shape accurately.
-
-### Q2: Why average all frames?
-**A:** Your hand moves slightly even when trying to stay still. Averaging smooths out these tiny movements and creates a stable signature.
-
-### Q3: Why 15 consecutive frames?
-**A:** Prevents accidental matches. If it matches once, it could be coincidence. But 15 times in a row (0.5 seconds) means it's definitely your gesture!
-
-### Q4: Why 75% threshold?
-**A:** Balance between security and usability. Too low (50%) = easy to hack. Too high (95%) = too hard to login. 75% is the sweet spot!
-
-### Q5: Can two people have the same gesture?
-**A:** Technically possible, but VERY unlikely. Each person's hand size, finger length, and exact position are unique. Even a "peace sign" will be slightly different for each person.
-
-### Q6: Is it secure?
-**A:** More secure than passwords (can't be stolen), but less secure than fingerprint/face recognition. Good for medium security needs.
-
----
-
-## 🎨 Part 10: Visual Learning
-
-### Understanding the Flow Diagram
-
-```
-┌─────────────────┐
-│   User Opens    │
-│      App        │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Login Screen   │
-│  - Username     │
-│  - Camera Btn   │
-└────────┬────────┘
-         │
-         │ (Clicks Register)
-         ▼
-┌─────────────────┐
-│Register Screen  │
-│  - Username     │
-│  - Hand Type    │
-│  - Register Btn │
-└────────┬────────┘
-         │
-         │ (Clicks Register)
-         ▼
-┌─────────────────┐
-│  Camera Opens   │
-│  - Shows Gesture│
-│  - Records 8sec │
-│  - Saves Data   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Back to Login  │
-└─────────────────┘
-
-         │
-         │ (Clicks Login)
-         ▼
-┌─────────────────┐
-│  Camera Opens   │
-│  - Shows Gesture│
-│  - Compares     │
-│  - Authenticates│
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│   Dashboard     │
-│  - Welcome!     │
-└─────────────────┘
-```
-
----
-
-## 📚 Part 11: Additional Resources
-
-### Books & Tutorials
-- **Python Basics:** "Automate the Boring Stuff with Python"
-- **OpenCV:** "Learning OpenCV" by Gary Bradski
-- **MediaPipe:** Official MediaPipe documentation
-
-### Online Courses
-- Python for Everybody (Coursera)
-- OpenCV Tutorials (YouTube)
-- MediaPipe Hands Detection (Official docs)
-
-### Practice Projects
-1. **Simple Webcam Viewer** - Just show camera feed
-2. **Hand Tracker** - Draw hand landmarks on video
-3. **Gesture Recognizer** - Detect specific gestures (peace sign, thumbs up)
-4. **This Project** - Full authentication system
-
----
-
-## 🎯 Part 12: Next Steps
-
-### Once You Understand This Project:
-
-1. **Modify Colors/UI** - Change the dark theme
-2. **Add More Gestures** - Support for more hand shapes
-3. **Improve Security** - Add multiple gesture support
-4. **Add Features** - Password reset, user management
-5. **Port to Mobile** - Android/iOS version
-6. **Add Database** - Use SQLite instead of JSON
-7. **Cloud Sync** - Store gestures in cloud
-
----
-
-## 💡 Tips for Learning
-
-1. **Don't rush!** Take your time understanding each concept
-2. **Experiment!** Change values and see what happens
-3. **Read error messages** - They tell you what's wrong
-4. **Use print()** - Print variables to see what's happening
-5. **Break things** - Then fix them! Best way to learn
-6. **Ask questions** - Google, Stack Overflow, communities
-7. **Build something** - Best way to learn is by doing
-
----
-
-## 🎉 Conclusion
-
-Congratulations! 🎊 You now have everything you need to understand this project!
-
-**Remember:**
-- Learning programming takes time
-- It's okay to not understand everything immediately
-- Practice makes perfect
-- Every expert was once a beginner
-
-**You've got this!** 💪
-
----
-
-## 📞 Need Help?
-
-If you're stuck:
-1. Read the code comments (if any)
-2. Print variables to see values
-3. Break down complex functions into smaller parts
-4. Test each function individually
-5. Google error messages
-6. Ask in programming communities
-
----
-
-**Happy Learning! 🚀**
-
-*Made with ❤️ for beginners*
-
+1. Run the code and test it
+2. Add print statements to see what's happening
+3. Modify threshold values and see effects
+4. Try adding new features
+5. Read the actual code files alongside this guide
